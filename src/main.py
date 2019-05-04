@@ -5,6 +5,8 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from torch.utils.data import DataLoader
 from torch import nn
+import torch.optim as optim
+from torch.autograd import Variable
 
 import torch.nn as nn
 
@@ -28,11 +30,10 @@ train_loader = DataLoader(train_data, batch_size=16, shuffle=True)
 val_loader = DataLoader(val_data, batch_size=16, shuffle=True)
 
 
-#building Unet copied from https://towardsdatascience.com/u-net-b229b32b4a71
+# building Unet copied from https://towardsdatascience.com/u-net-b229b32b4a71
 class unet(nn.Module):
 
-
-    #Upwards
+    # Upwards
     def contracting_block(self, in_channels, out_channels, kernel_size=3):
         block = torch.nn.Sequential(
             torch.nn.Conv2d(kernel_size=kernel_size, in_channels=in_channels, out_channels=out_channels),
@@ -45,7 +46,7 @@ class unet(nn.Module):
 
         return block
 
-    #Downwards
+    # Downwards
     def expansive_block(self, in_channels, mid_channel, out_channels, kernel_size=3):
         block = torch.nn.Sequential(
             torch.nn.Conv2d(kernel_size=kernel_size, in_channels=in_channels, out_channels=mid_channel),
@@ -59,7 +60,7 @@ class unet(nn.Module):
         )
         return block
 
-    #Final block
+    # Final block
     def final_block(self, in_channels, mid_channel, out_channels, kernel_size=3):
         block = torch.nn.Sequential(
             torch.nn.Conv2d(kernel_size=kernel_size, in_channels=in_channels, out_channels=mid_channel),
@@ -74,10 +75,10 @@ class unet(nn.Module):
         )
         return block
 
-    #Connecting block
+    # Connecting block
 
-    def bottleneck_block(self,in_channels,out_channels,kernel_size=3):
-        block =torch.nn.Sequential(
+    def bottleneck_block(self, in_channels, out_channels, kernel_size=3):
+        block = torch.nn.Sequential(
             torch.nn.Conv2d(kernel_size=kernel_size, in_channels=in_channels, out_channels=out_channels),
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(out_channels),
@@ -85,7 +86,7 @@ class unet(nn.Module):
             torch.nn.ReLU(),
             torch.nn.BatchNorm2d(out_channels),
             torch.nn.ConvTranspose2d(in_channels=out_channels, out_channels=in_channels, kernel_size=kernel_size,
-                                     stride=2, padding=1,                       output_padding=1)
+                                     stride=2, padding=1, output_padding=1)
         )
         return block
 
@@ -95,23 +96,23 @@ class unet(nn.Module):
             bypass = F.pad(bypass, (-c, -c, -c, -c))
         return torch.cat((upsampled, bypass), 1)
 
-    def __init__(self,in_channel,out_channel):
-        super(unet,self).__init__()
-        #contracting
+    def __init__(self, in_channel, out_channel):
+        super(unet, self).__init__()
+        # contracting
 
-        self.conv_encode = self.contracting_block(in_channel,out_channels=64)
+        self.conv_encode = self.contracting_block(in_channel, out_channels=64)
         self.convmaxpool1 = torch.nn.MaxPool2d(kernel_size=2)
-        self.conv_encode2 = self.contracting_block(64,128)
+        self.conv_encode2 = self.contracting_block(64, 128)
         self.conv_maxpool2 = torch.nn.MaxPool2d(kernel_size=2)
 
-        #connection
-        self.bottleneck2 = self.bottleneck_block(128,256)
+        # connection
+        self.bottleneck2 = self.bottleneck_block(128, 256)
 
-        #expansive
-        self.conv_decode2 = self.expansive_block(256,128,64)
+        # expansive
+        self.conv_decode2 = self.expansive_block(256, 128, 64)
 
-        #final layer
-        self.final = self.final_block(128,64,out_channel)
+        # final layer
+        self.final = self.final_block(128, 64, out_channel)
 
     def forward(self, x):
         # Encode
@@ -133,4 +134,39 @@ class unet(nn.Module):
         return final_layer
 
 
+# Initialize Unet
+model = unet(in_channel=1, out_channel=11)
 
+# Check for GPU
+if torch.cuda.is_available():
+    model.cuda()
+
+# Optimizer
+optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.8)
+
+# Criterion
+criterion = nn.CrossEntropyLoss
+
+
+def train(epoch):
+    model.train()
+    for (data, target) in enumerate(train_loader):
+        # For GPU use
+        # data = data.cuda()
+        # target = target.cuda()
+
+        data = Variable(data)
+        target = Variable(data)
+        optimizer.zero_grad()
+        out = model(data)
+        loss = criterion(out, target)
+        loss.backward()
+        optimizer.step()
+
+
+def go():
+    for epoch in range(1, 30):
+        train(epoch)
+
+
+go()
