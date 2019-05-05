@@ -15,7 +15,7 @@ device = torch.device("cuda" if torch.cuda.is_available()
                       else "cpu")
 
 # Equalizes Images and Transforms them to Tensors
-transformation = transforms.Compose([transforms.Resize((1280, 1024)), transforms.ToTensor()])
+transformation = transforms.Compose([transforms.Resize((1024, 1024)), transforms.ToTensor()])
 
 # Import our Data (path has to be adjusted) probably wrong
 train_data = datasets.ImageFolder("/home/jonny/Dokumente/Uni/Chirugie/Data/"
@@ -164,9 +164,7 @@ def train(epoch):
         optimizer.step()
 
 
-def go():
-    for epoch in range(1, 30):
+def go(times):
+    for epoch in range(1, times):
         train(epoch)
 
-
-go()
