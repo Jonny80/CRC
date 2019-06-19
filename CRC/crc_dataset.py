@@ -77,7 +77,7 @@ class crc_Dataset(Dataset):
         img_as_img = boarder_img_as_img
         label_as_img = boarder_label_as_img
 
-        '''
+
         if self.job == "train":
 
             #####################################Data Augmentation##################################
@@ -105,13 +105,15 @@ class crc_Dataset(Dataset):
             #####################################Data Augmentation##################################
         
         
-        '''
+
         label_as_img = label_as_img.resize((self.img_size, self.img_size))  # resize (PIL.Image)
         img_as_img = img_as_img.resize((self.img_size, self.img_size))  # resize (PIL.Image)
-        width, height = label_as_img.size
 
-        img_tensor = torch.from_numpy(np.array(img_as_img))        # Image to Tensor
-        img_tensor = img_tensor.permute(2,0,1)
+        img_tensor = self.transforms(img_as_img)       # Image to Tensor
+        #img_tensor = img_tensor.permute(2,0,1)
+        img_tensor = img_tensor.float()
+
+        print(img_tensor.shape)
 
         label_tensor = torch.from_numpy(np.array(label_as_img))    # Label to Tensor
         label_tensor = label_tensor.permute(2,0,1)
@@ -119,6 +121,8 @@ class crc_Dataset(Dataset):
 
 
         label_tensor = self.mask_to_class(label_tensor)
+        label_tensor = label_tensor.long()
+        print(label_tensor.shape)
 
 
         return img_tensor, label_tensor
@@ -129,6 +133,5 @@ class crc_Dataset(Dataset):
     def mask_to_class(self,mask):
         for k in self.mapping2:
             mask[mask == k] = self.mapping2[k]
-        print(mask)
-        print(mask.shape)
+
         return mask
