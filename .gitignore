@@ -1,4 +1,4 @@
 .idea/
 CRC/data/
 CRC/model/
-CRC/__pycache/
+CRC/__pycache__/*

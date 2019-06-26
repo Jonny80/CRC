@@ -31,16 +31,15 @@ def test():
         input_batch = Variable(input_batch).cuda(0)
         label_batch = Variable(label_batch).cuda(0)
         generated_batch = generator.forward(input_batch)
-        print(input_batch.size(), label_batch.size())
 
         loss = loss_function(generated_batch, label_batch)
 
-        dice = dice_loss(generated_batch, label_batch.cuda()).item()
-        dice_sum += dice
+        #dice = dice_loss(generated_batch, label_batch.cuda()).item()
+        #dice_sum += dice
         loss.backward()
         optimizer.step()
-    avg_dice = dice_sum / train_loader.__len__()
-    print(avg_dice)
+    #avg_dice = dice_sum / train_loader.__len__()
+    #print(avg_dice)
     print("done.")
 
 test()
