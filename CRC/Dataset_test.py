@@ -4,7 +4,6 @@ from label_to_img import *
 from dice import *
 import sys
 import torch
-from loss import *
 
 img_size = 128
 batch_size = 1

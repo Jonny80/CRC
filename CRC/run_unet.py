@@ -4,7 +4,6 @@ from label_to_img import *
 from dice import *
 import sys
 import torch
-from loss import *
 
 use_gpu = torch.cuda.is_available()
 
