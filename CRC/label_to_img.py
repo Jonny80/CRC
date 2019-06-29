@@ -26,6 +26,9 @@ mapping = {
 }
 
 
+
+
+
 def label_to_img(batch, img_size):  # [4, 11, 128, 128]
     height = img_size
     width = img_size

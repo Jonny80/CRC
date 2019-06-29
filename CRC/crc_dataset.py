@@ -36,6 +36,9 @@ class crc_Dataset(Dataset):
             (123, 15, 175, 255): 9,  # suction-instrument
             (124, 155, 5, 255): 10  # small-intestine
         }
+
+        self.reversed_mapping = dict(map(reversed, self.mapping.items()))
+
         ####################### Actually not needed #######################################
         self.mapping2 = {
             torch.tensor([0, 0, 0, 255], dtype=torch.uint8): 0,  # background,
@@ -52,9 +55,9 @@ class crc_Dataset(Dataset):
         }
 
         self.mapping_labels = {
-            0: "background", 1: "instrument-shaft", 2: "instrument-clasper", 3: "instrument-wrist",
-            4: "kidney-parenchyma", 5: "covered-kidney", 6: "thread", 7: "clamps", 8: "suturing-needle",
-            9: "suction-instrument", 10: "small intestines"
+            "background": 0, "instrument-shaft": 1, "instrument-clasper": 2, "instrument-wrist": 3,
+            "kidney-parenchyma": 4, "covered-kidney": 5, "thread": 6, "clamps": 7, "suturing-needle": 8,
+            "suction-instrument": 9, "small intestines": 10
         }
 
         ###################################################################################
@@ -140,3 +143,19 @@ class crc_Dataset(Dataset):
         label = self.transforms(label)  # Squeeze to 3D and transforms to Tensor
 
         return label  # Return LabelTensor
+
+    def getSingleLabel(self, label, image):
+        label = self.mapping_labels[label]                  # Get Label Number
+        label_value = self.reversed_mapping[label]          # Get Label Pixelvalue
+
+        height, width = image.size                          # Get Imagesize
+
+        for i in range(height):                             # Change everthing exept Label to background
+            for j in range(width):
+                value = image.getpixel((i, j))
+                if value == label_value:
+                    pass
+                else:
+                    image[i, j] = self.reversed_mapping[self.mapping_labels["background"]]
+
+        return image
