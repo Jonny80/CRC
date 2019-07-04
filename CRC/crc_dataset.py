@@ -140,7 +140,7 @@ class crc_Dataset(Dataset):
                 finally:
                     label[i][j] = value  # Assign Coordinates to Class
 
-        label = self.transforms(label)  # Squeeze to 3D and transforms to Tensor
+        label = self.transforms(label)  # transforms to Tensor
 
         return label  # Return LabelTensor
 
@@ -156,6 +156,39 @@ class crc_Dataset(Dataset):
                 if value == label_value:
                     pass
                 else:
-                    image[i, j] = self.reversed_mapping[self.mapping_labels["background"]]
+                    image.putpixel((i,j),(0,0,0,255))
+
+        return image
+
+
+
+    def getMultipleLabels(self,labels,image):
+
+        labellist = []
+
+        for i in labels:
+            labellist.append(self.reversed_mapping[self.mapping_labels[i]])
+
+
+        height,width = image.size
+
+        set_pixel = True
+
+        for i in range(height):
+            for j in range(width):
+                value = image.getpixel((i,j))
+
+                for i in labellist:
+
+                    if i == value:
+                        set_pixel = False
+
+
+                if set_pixel == False:
+                    set_pixel = True
+                    pass
+                else:
+                    image.putpixel((i,j),(0,0,0,255))
+
 
         return image

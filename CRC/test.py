@@ -49,4 +49,38 @@ def showImage(pic):
     plt.imshow(pic)
     plt.show()
 
-image2 = getSingleLabel("instrument-shaft",image)
+
+
+def getMultipleLabels(labels,image):
+
+    labellist = []
+
+    for i in labels:
+        labellist.append(reversed_mapping[mapping_labels[i]])
+
+
+    height,width = image.size
+
+    set_pixel = True
+
+    for i in range(height):
+        for j in range(width):
+            value = image.getpixel((i,j))
+
+            for k in labellist:
+
+                if k == value:
+                    set_pixel = False
+
+
+            if set_pixel == False:
+                set_pixel = True
+                pass
+            else:
+                image.putpixel((i,j),(0,0,0,255))
+
+
+    return image
+
+image2 = getMultipleLabels(("instrument-shaft","instrument-clasper"),image)
+showImage(image2)
