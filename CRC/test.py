@@ -1,6 +1,11 @@
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+import label_to_img
+from crc_dataset import *
+from torch.utils.data import DataLoader
+from torch.autograd import Variable
+import label_to_img
 
 image = Image.open("data/train/labels/labels/frame000.png")
 
@@ -82,5 +87,26 @@ def getMultipleLabels(labels,image):
 
     return image
 
-image2 = getMultipleLabels(("instrument-shaft","instrument-clasper"),image)
-showImage(image2)
+#image2 = getMultipleLabels(("instrument-shaft","instrument-clasper"),image)
+#showImage(image2)
+
+
+
+data_train = crc_Dataset(img_size=128,job="validate")
+data_loader= DataLoader(dataset=data_train,batch_size=1,pin_memory=True,shuffle=False)
+for i in range(10):
+    try:
+        generator = torch.load('model/' + "myNewModel.pkl")
+    except:
+        print("Error: Model doesn't exist")
+        exit()
+
+    for batch_number, (input_batch,label_batch) in enumerate(data_loader):
+        input_batch = Variable(input_batch).cuda(0)
+        generated_batch = generator.forward(input_batch)
+        picture = label_to_img.tensor_to_img(generated_batch.cpu().data,128)
+        picture.save("data/validate-result/img_{}_generated.png".format(batch_number))
+        print("done.")
+
+
+old_size = image.size

@@ -4,12 +4,13 @@ from label_to_img import *
 from dice import *
 import sys
 import torch
+import loss
 
 use_gpu = torch.cuda.is_available()
 
 def main():
     img_size = 128
-    epoch = 5
+    epoch = 101
     batch_size = 1
     learning_rate = 0.1
     momentum = 0.9
@@ -30,7 +31,7 @@ def main():
         except:
             generator = UnetGenerator(3, 11, 64).cuda()# (3,3,64)#in_dim,out_dim,num_filter out dim = 4 oder 11
             print("new model generated")
-        loss_function = nn.CrossEntropyLoss()
+        loss_function = LossMulti
         optimizer = torch.optim.SGD(generator.parameters(), lr=learning_rate, momentum=momentum)
         #optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
@@ -38,14 +39,13 @@ def main():
         for ep in range(epoch):
             dice_sum = 0
             for batch_number,(input_batch, label_batch) in enumerate(train_loader):
-                print(input_batch.size(),label_batch.size())
                 optimizer.zero_grad()
                 input_batch = Variable(input_batch).cuda(0)
                 label_batch = Variable(label_batch).cuda(0)
                 generated_batch = generator.forward(input_batch)
                 loss = loss_function(generated_batch,label_batch)
-                dice = dice_loss(generated_batch, label_batch.cuda()).item()
-                dice_sum += dice
+                #dice = dice_loss(generated_batch, label_batch.cuda()).item()
+                #dice_sum += dice
                 loss.backward()
                 optimizer.step()
             avg_dice = dice_sum/train_loader.__len__()
@@ -69,9 +69,9 @@ def main():
         for batch_number, (input_batch, label_batch) in enumerate(validate_loader):
             input_batch = Variable(input_batch).cuda(0)
             generated_batch= generator.forward(input_batch)
-            dice = dice_loss(generated_batch, label_batch.cuda()).item()
-            dice_sum += dice
-            print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
+            #dice = dice_loss(generated_batch, label_batch.cuda()).item()
+            #dice_sum += dice
+            #print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
             label_out_img = label_to_img(label_batch.cpu().data, img_size)
             generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))

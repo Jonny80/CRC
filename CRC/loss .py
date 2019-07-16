@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+import utils
 import numpy as np
 
 
@@ -31,7 +32,8 @@ class LossBinary:
 class LossMulti:
     def __init__(self, jaccard_weight=0, class_weights=None, num_classes=1):
         if class_weights is not None:
-            nll_weight =torch.from_numpy(class_weights.astype(np.float32)).cuda()
+            nll_weight = utils.cuda(
+                torch.float32.from_numpy(class_weights))
         else:
             nll_weight = None
         self.nll_loss = nn.NLLLoss2d(weight=nll_weight)

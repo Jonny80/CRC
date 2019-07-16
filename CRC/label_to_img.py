@@ -76,12 +76,21 @@ def label_to_img(batch, img_size):  # [4, 11, 128, 128]
 
 
 def tensor_to_img(batch, img_size):
-    element = batch[0].numpy()  # Get Tensor
+    element = batch[0]  # Get Tensor
     out_img = Image.new("RGBA", (img_size, img_size), (0, 0, 0, 255))  # Initialize Image
+
 
     for i in range(img_size):
         for j in range(img_size):
-            value = mapping[element[i][j]]  # Class to RGBA
+            value_1 = -2
+            value_2 = 1
+            for channel in range(11):
+                if value_1 < element[channel][i][j]:
+                    value_2 = channel
+                    value_1 = element[channel][i][j]
+
+
+            value = mapping[value_2]  # Class to RGBA
             out_img.putpixel((i, j), value)  # Set Pixel Value
 
     return out_img
