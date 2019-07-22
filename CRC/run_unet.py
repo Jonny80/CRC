@@ -32,26 +32,31 @@ def main():
         except:
             generator = UnetGenerator(3, 11, 64).cuda()# (3,3,64)#in_dim,out_dim,num_filter out dim = 4 oder 11
             print("new model generated")
-        loss_function = losses.LossMulti()
-        optimizer = torch.optim.SGD(generator.parameters(), lr=learning_rate, momentum=momentum)
-        #optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
-
+        loss_function = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.SGD(generator.parameters(), lr=0.01, momentum=momentum)
+        #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
         for ep in range(epoch):
-            dice_sum = 0
+            confusion_matrix = np.zeros(
+                (11, 11), dtype=np.uint32)
             for batch_number,(input_batch, label_batch) in enumerate(train_loader):
                 optimizer.zero_grad()
                 input_batch = Variable(input_batch).cuda(0)
                 label_batch = Variable(label_batch).cuda(0)
                 generated_batch = generator.forward(input_batch)
                 loss = loss_function(generated_batch,label_batch)
-                dice = dice_loss2(label_batch, generated_batch.cuda()).item()
+                output_classes = generated_batch.data.cpu().numpy().argmax(axis=1)
+                target_classes = label_batch.data.cpu().numpy()
+                confusion_matrix += calculate_confusion_matrix_from_arrays(
+                 output_classes, target_classes, 11)
                 loss.backward()
                 optimizer.step()
-                dice_sum += dice
-            avg_dice = dice_sum/train_loader.__len__()
-            print("epoche:{}/{} avg dice:{}".format(ep, epoch - 1, avg_dice))
-            scheduler.step(avg_dice)
+            confusion_matrix = confusion_matrix[1:, 1:]
+            dices = {'dice_{}'.format(cls + 1): dice
+                     for cls, dice in enumerate(calculate_dice(confusion_matrix))}
+            print(dices)
+            average_dices = np.mean(list(dices.values()))
+            print(average_dices)
+            #scheduler.step(0.41234)
             if ep % 10 == 0:
                 torch.save(generator, 'model/'+model)
                 print("model saved")
@@ -70,13 +75,8 @@ def main():
         for batch_number, (input_batch, label_batch) in enumerate(validate_loader):
             input_batch = Variable(input_batch).cuda(0)
             generated_batch= generator.forward(input_batch)
-            dice = dice_loss2(generated_batch, label_batch.cuda()).item()
-            dice_sum += dice
-            print("batch:{}/{} dice: {}".format(batch_number, validate_loader.__len__()-1, dice))
             generated_out_img = label_to_img(generated_batch.cpu().data, img_size)
-            label_out_img = tensor_to_img(label_batch.cpu().data, img_size)
             generated_out_img.save("data/validate-result/img_{}_generated.png".format(batch_number))
-            label_out_img.save("data/validate-result/img_{}_truth.png".format(batch_number))
         avg_dice = dice_sum / validate_loader.__len__()
         print("Avgerage dice distance, 0 means perfect:", avg_dice)
 
