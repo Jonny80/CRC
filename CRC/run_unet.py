@@ -32,7 +32,7 @@ def main():
         except:
             generator = UnetGenerator(3, 11, 64).cuda()# (3,3,64)#in_dim,out_dim,num_filter out dim = 4 oder 11
             print("new model generated")
-        loss_function = torch.nn.CrossEntropyLoss()
+        loss_function = losses.LossMulti()
         optimizer = torch.optim.SGD(generator.parameters(), lr=0.01, momentum=momentum)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
         for ep in range(epoch):
@@ -55,7 +55,7 @@ def main():
                      for cls, dice in enumerate(calculate_dice(confusion_matrix))}
             #print(dices)
             average_dices = np.mean(list(dices.values()))
-            scheduler.step(average_dices)
+            scheduler.step(0.8)
             print(average_dices)
             print(learning_rate)
             if ep % 10 == 0:
