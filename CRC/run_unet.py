@@ -11,8 +11,8 @@ use_gpu = torch.cuda.is_available()
 
 def main():
     img_size = 128
-    epoch = 101
-    batch_size = 1
+    epoch = 5000
+    batch_size = 4
     learning_rate = 0.1
     momentum = 0.9
 
@@ -34,7 +34,7 @@ def main():
             print("new model generated")
         loss_function = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(generator.parameters(), lr=0.01, momentum=momentum)
-        #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode='max', verbose=True)
         for ep in range(epoch):
             confusion_matrix = np.zeros(
                 (11, 11), dtype=np.uint32)
@@ -53,10 +53,11 @@ def main():
             confusion_matrix = confusion_matrix[1:, 1:]
             dices = {'dice_{}'.format(cls + 1): dice
                      for cls, dice in enumerate(calculate_dice(confusion_matrix))}
-            print(dices)
+            #print(dices)
             average_dices = np.mean(list(dices.values()))
+            scheduler.step(average_dices)
             print(average_dices)
-            #scheduler.step(0.41234)
+            print(learning_rate)
             if ep % 10 == 0:
                 torch.save(generator, 'model/'+model)
                 print("model saved")
